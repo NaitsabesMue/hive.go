@@ -170,6 +170,8 @@ func RankByThreshold(f Func, target *identity.Identity, identities []*identity.I
 	var sumMana uint64
 	thresholdMana := uint64(float64(totalMana) * threshold)
 
+	lowerSet := []*identity.Identity{}
+	upperSet := []*identity.Identity{}
 	totalSet := []*identity.Identity{}
 
 	manaRank := NewIdentity(identities, f)
@@ -189,21 +191,36 @@ func RankByThreshold(f Func, target *identity.Identity, identities []*identity.I
 	// find target position
 	targetIndex := findIndex(targetMana, keys)
 
-	lowerCounter = targetIndex - 1
+	
 	upperCounter = targetIndex + 1
 
-	for sumMana < thresholdMana && (upperCounter < len(keys) || lowerCounter >= 0) {
-		if lowerCounter >= 0 {
-			sumMana += keys[lowerCounter]
-			totalSet = append(totalSet, manaRank[keys[lowerCounter]]...)
-			lowerCounter--
-		}
+	for sumMana < thresholdMana && upperCounter < len(keys) {
 		if upperCounter < len(keys) {
 			sumMana += keys[upperCounter]
-			totalSet = append(totalSet, manaRank[keys[upperCounter]]...)
+			upperSet = append(upperSet, manaRank[keys[upperCounter]]...)
 			upperCounter++
 		}
 	}
+	lowerCounter = targetIndex - 1
+	lowerReached := false
+	for !(lowerReached){
+		if  lowerCounter >= 0  {
+			sumMana = 0
+			for i:=lowerCounter; i< targetIndex; i++ {
+				sumMana += keys[i]
+			}
+			if sumMana < thresholdMana{
+				lowerSet = append(lowerSet, manaRank[keys[lowerCounter]]...)
+				lowerCounter--
+			} else {
+				lowerReached = true 
+			}
+		} else {
+			lowerReached = true
+		}
+	}
+	
+	totalSet = append(lowerSet, upperSet)
 
 	// include my rank
 	for _, identity := range manaRank[targetMana] {
